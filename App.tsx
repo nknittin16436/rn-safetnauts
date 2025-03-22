@@ -73,7 +73,7 @@ function App(): React.JSX.Element {
   }
 
   if (ownerInfo) {
-    <ScannedInfo ownerInfo={ownerInfo} />;
+    return <ScannedInfo ownerInfo={ownerInfo} />;
   }
 
   return <ScanNFC onPressScan={readTag} />;
