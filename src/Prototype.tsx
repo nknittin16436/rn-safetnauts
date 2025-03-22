@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
-import { LinearGradient } from 'react-native-linear-gradient';
+import {useEffect, useState} from 'react';
+import {View, Text, StyleSheet, Animated} from 'react-native';
+import {LinearGradient} from 'react-native-linear-gradient';
+import {PERMISSIONS, requestMultiple} from 'react-native-permissions';
 
-const Prototype = () =>  {
+const Prototype = () => {
   const [isCollision, setIsCollision] = useState(false);
   const pulseAnim = new Animated.Value(1);
 
   useEffect(() => {
+    getPermissions();
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
@@ -19,21 +21,28 @@ const Prototype = () =>  {
           duration: 1000,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     ).start();
   }, []);
 
+  const getPermissions = async () => {
+    const result = await requestMultiple([
+      PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION,
+      PERMISSIONS.ANDROID.BLUETOOTH_ADVERTISE,
+      PERMISSIONS.ANDROID.BLUETOOTH_CONNECT,
+      PERMISSIONS.ANDROID.BLUETOOTH_SCAN,
+    ]);
+  };
+
   return (
-    <LinearGradient
-      colors={['#1a1a1a', '#2a2a2a']}
-      style={styles.container}>
+    <LinearGradient colors={['#1a1a1a', '#2a2a2a']} style={styles.container}>
       <View style={styles.content}>
         <Animated.View
           style={[
             styles.indicator,
             {
               backgroundColor: isCollision ? '#ff4444' : '#00ff88',
-              transform: [{ scale: pulseAnim }],
+              transform: [{scale: pulseAnim}],
             },
           ]}
         />
@@ -48,13 +57,11 @@ const Prototype = () =>  {
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Device Monitoring Active
-        </Text>
+        <Text style={styles.footerText}>Device Monitoring Active</Text>
       </View>
     </LinearGradient>
   );
-}
+};
 
 export default Prototype;
 
@@ -62,7 +69,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1a1a1a',
-    padding: 20
+    padding: 20,
   },
   content: {
     flex: 1,
