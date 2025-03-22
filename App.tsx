@@ -10,13 +10,15 @@ import React, {useEffect, useState} from 'react';
 import ScanNFC from './src/ScanNFC';
 import ScannedInfo from './src/ScannedInfo';
 import NfcManager, {NfcEvents, NfcTech} from 'react-native-nfc-manager';
-import {Alert, ToastAndroid} from 'react-native';
+import {Alert, Button, ToastAndroid, View, StyleSheet} from 'react-native';
+import Prototype from './src/Prototype';
 
 NfcManager.start();
 
 function App(): React.JSX.Element {
   const [isScanned, setIsScanned] = useState(false);
   const [ownerInfo, setOwnerInfo] = useState();
+  const [showPrototype, setShowPrototype] = useState(false);
 
   useEffect(() => {
     const checkIsSupported = async () => {
@@ -86,11 +88,33 @@ function App(): React.JSX.Element {
   //   }
   // }
 
-  return isScanned ? (
-    <ScannedInfo ownerInfo={ownerInfo} />
-  ) : (
-    <ScanNFC onPressScan={readTag} />
+  return (
+    <View style={{flex: 1}}>
+      {!showPrototype ? (
+        <View style={{flex: 1}}>
+          {isScanned ? (
+            <ScannedInfo ownerInfo={ownerInfo} />
+          ) : (
+            <ScanNFC onPressScan={readTag} />
+          )}
+        </View>
+      ) : (
+        <View style={{flex: 1}}>
+          <Prototype />
+        </View>
+      )}
+      <View style={styles.button}>
+        <Button
+          title={showPrototype ? 'Hide Prototype' : 'View Prototype'}
+          onPress={() => setShowPrototype(prev => !prev)}
+        />
+      </View>
+    </View>
   );
 }
 
 export default App;
+
+const styles = StyleSheet.create({
+  button: {position: 'absolute', bottom: 20, left: 20, right: 20},
+});
