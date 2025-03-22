@@ -5,9 +5,9 @@
  * @format
  */
 
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 
-import {ActivityIndicator, StyleSheet, ToastAndroid, View} from 'react-native';
+import {ActivityIndicator, Button, StyleSheet, ToastAndroid, View} from 'react-native';
 import NfcManager, {NfcEvents} from 'react-native-nfc-manager';
 import NFCNotFound from './src/NFCNotFound';
 import Prototype from './src/Prototype';
@@ -74,7 +74,7 @@ function App(): React.JSX.Element {
     }
   };
 
-  const RenderChild = () => {
+  const RenderChild = useCallback(() => {
     if (showPrototype) {
       return (
         <View style={{flex: 1}}>
@@ -94,7 +94,7 @@ function App(): React.JSX.Element {
     }
 
     return <ScanNFC onPressScan={readTag} />;
-  };
+  }, [ownerInfo]);
 
   return (
     <View style={{flex: 1}}>
@@ -104,12 +104,12 @@ function App(): React.JSX.Element {
         </View>
       )}
       <RenderChild />
-      {/* <View style={styles.button}>
+      {!ownerInfo && <View style={styles.button}>
         <Button
           title={showPrototype ? 'Hide Prototype' : 'View Prototype'}
           onPress={() => setShowPrototype(prev => !prev)}
         />
-      </View> */}
+      </View>}
     </View>
   );
 }
@@ -123,8 +123,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 4,
-    top: '50%',
+    top: '60%',
     left: '50%',
-    transform: [{translateX: '-50%'}, {translateY: '-50%'}],
+    transform: [{translateX: '-60%'}, {translateY: '-50%'}],
   },
 });

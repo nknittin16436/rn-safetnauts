@@ -9,6 +9,7 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
+import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
 
 interface PersonInfo {
   name: string;
@@ -54,8 +55,7 @@ function isDatePassed(dateString: string) {
   return givenDate < today;
 }
 
-const ScannedInfo = ({ownerInfo: personInfo,onClose}) => {
-
+const ScannedInfo = ({ownerInfo: personInfo, onClose}) => {
   const handleFIRPress = () => {
     Alert.alert('Register FIR', 'Are you sure you want to register an FIR?', [
       {text: 'Cancel', style: 'cancel'},
@@ -74,6 +74,14 @@ const ScannedInfo = ({ownerInfo: personInfo,onClose}) => {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
+          <TouchableOpacity onPress={onClose}>
+            <FontAwesome6
+              name="arrow-left"
+              size={20}
+              color="#2D3748"
+              iconStyle="solid"
+            />
+          </TouchableOpacity>
           <View style={styles.headerInfo}>
             <Text style={styles.title}>Person Information</Text>
           </View>
@@ -153,8 +161,8 @@ const ScannedInfo = ({ownerInfo: personInfo,onClose}) => {
       <TouchableOpacity style={styles.firButton} onPress={handleFIRPress}>
         <Text style={styles.firButtonText}>Register FIR</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.doneButton} onPress={onClose}>
-        <Text style={styles.firButtonText}>Done</Text>
+      <TouchableOpacity style={styles.doneButton} onPress={handleFIRPress}>
+        <Text style={styles.firButtonText}>Insurance Claim</Text>
       </TouchableOpacity>
     </View>
   );
