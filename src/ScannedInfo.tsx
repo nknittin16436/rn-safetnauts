@@ -9,11 +9,13 @@ import {
 import {memo} from 'react';
 import Icon from '@react-native-vector-icons/fontawesome6';
 
-const ScannedInfo = ({
-  ownerInfo,
-}: {
-  ownerInfo?: {name: string; regNumber: string; model: string};
-}) => {
+export interface OwnerInfo {
+  name: string;
+  regNumber: string;
+  model: string;
+}
+
+const ScannedInfo = ({ownerInfo}: {ownerInfo?: OwnerInfo}) => {
   const {name, regNumber, model} = ownerInfo ?? {};
 
   const handleRaiseFIR = () => {

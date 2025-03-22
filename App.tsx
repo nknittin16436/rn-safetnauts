@@ -8,15 +8,16 @@
 import React, {useEffect, useState} from 'react';
 
 import ScanNFC from './src/ScanNFC';
-import ScannedInfo from './src/ScannedInfo';
-import NfcManager, {NfcEvents, NfcTech} from 'react-native-nfc-manager';
-import {Alert, ToastAndroid} from 'react-native';
+import ScannedInfo, {OwnerInfo} from './src/ScannedInfo';
+import NfcManager, {NfcEvents} from 'react-native-nfc-manager';
+import {ToastAndroid} from 'react-native';
+import NFCNotFound from './src/NFCNotFound';
 
 NfcManager.start();
 
 function App(): React.JSX.Element {
-  const [isScanned, setIsScanned] = useState(false);
-  const [ownerInfo, setOwnerInfo] = useState();
+  const [ownerInfo, setOwnerInfo] = useState<OwnerInfo>();
+  const [isNFCSupported, setIsNFCSupported] = useState(false);
 
   useEffect(() => {
     const checkIsSupported = async () => {
@@ -24,7 +25,7 @@ function App(): React.JSX.Element {
       if (deviceIsSupported) {
         await NfcManager.start();
       } else {
-        ToastAndroid.show('NFC not supported', 500);
+        setIsNFCSupported(true);
       }
     };
 
@@ -33,8 +34,6 @@ function App(): React.JSX.Element {
 
   useEffect(() => {
     NfcManager.setEventListener(NfcEvents.DiscoverTag, tag => {
-      console.log('tag=>', tag?.ndefMessage);
-
       const msgs = tag?.ndefMessage ?? [];
       const regByteCode = msgs?.[0]?.payload?.splice(3);
       const nameByteCode = msgs?.[1]?.payload?.splice(3);
@@ -53,7 +52,6 @@ function App(): React.JSX.Element {
         model,
         regNumber,
       });
-      setIsScanned(true);
     });
 
     return () => {
@@ -62,35 +60,23 @@ function App(): React.JSX.Element {
   }, []);
 
   const readTag = async () => {
-    ToastAndroid.show('Registererd', 100);
-    await NfcManager.registerTagEvent();
+    try {
+      await NfcManager.registerTagEvent();
+      ToastAndroid.show('Registererd', 100);
+    } catch (err) {
+      ToastAndroid.show('Something went wrong', 100);
+    }
   };
 
-  // async function onPressScan() {
-  //   try {
-  //     ToastAndroid.show(`Scan`, 1000);
+  if (isNFCSupported) {
+    return <NFCNotFound />;
+  }
 
-  //     // register for the NFC tag with NDEF in it
-  //     await NfcManager.requestTechnology(NfcTech.Ndef);
-  //     // the resolved tag object will contain `ndefMessage` property
-  //     const tag = await NfcManager.getTag();
-  //     ToastAndroid.show(`Tag found, ${tag?.ndefMessage}`, 1000);
-  //   } catch (ex) {
-  //     ToastAndroid.show(`Tag error, ${ex}`, 1000);
+  if (ownerInfo) {
+    <ScannedInfo ownerInfo={ownerInfo} />;
+  }
 
-  //     console.warn('Oops!', ex);
-  //   } finally {
-  //     ToastAndroid.show('Tag cancelled', 1000);
-  //     // stop the nfc scanning
-  //     NfcManager.cancelTechnologyRequest();
-  //   }
-  // }
-
-  return isScanned ? (
-    <ScannedInfo ownerInfo={ownerInfo} />
-  ) : (
-    <ScanNFC onPressScan={readTag} />
-  );
+  return <ScanNFC onPressScan={readTag} />;
 }
 
 export default App;

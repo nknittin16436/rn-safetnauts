@@ -1,24 +1,42 @@
 import FontAwesome6 from '@react-native-vector-icons/fontawesome6';
-import React from 'react';
+import React, {useState} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 
-const VehicleScannerScreen = ({onPressScan}: {onPressScan(): void}) => {
+const VehicleScannerScreen = ({
+  onPressScan,
+}: {
+  onPressScan: () => Promise<void>;
+}) => {
+  const [isRegistered, setIsRegistered] = useState(false);
+
+  const handleScan = async () => {
+    await onPressScan();
+    setIsRegistered(true);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Vehicle Scanner</Text>
       <Text style={styles.subHeader}>
-        Scan NFC tag to view vehicle information
+        {isRegistered
+          ? 'Please bring your device closer to NFC'
+          : 'Scan NFC tag to view vehicle information'}
       </Text>
 
-      <TouchableOpacity style={styles.scanBox} onPress={onPressScan}>
-        <FontAwesome6
-          name="qrcode"
-          size={50}
-          color="#4A64FE"
-          iconStyle="solid"
-        />
-        <Text style={styles.scanText}>Tap to Scan NFC Tag</Text>
-      </TouchableOpacity>
+      {!isRegistered ? (
+        <TouchableOpacity
+          style={styles.scanBox}
+          onPress={handleScan}
+          hitSlop={100}>
+          <FontAwesome6
+            name="qrcode"
+            size={50}
+            color="#4A64FE"
+            iconStyle="solid"
+          />
+          <Text style={styles.scanText}>Tap to Scan NFC Tag</Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 };
