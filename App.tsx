@@ -18,7 +18,7 @@ NfcManager.start();
 
 function App(): React.JSX.Element {
   const [isScanned, setIsScanned] = useState(false);
-  const [ownerInfo, setOwnerInfo] = useState();
+  const [ownerInfo, setOwnerInfo] = useState<OwnerInfo>();
   const [showPrototype, setShowPrototype] = useState(false);
   const [isNFCSupported, setIsNFCSupported] = useState(false);
 
@@ -71,37 +71,29 @@ function App(): React.JSX.Element {
     }
   };
 
-  if (isNFCSupported) {
-    return <NFCNotFound />;
-  }
-
-  if (ownerInfo) {
-    return <ScannedInfo ownerInfo={ownerInfo} />;
-  }
-
-  //     console.warn('Oops!', ex);
-  //   } finally {
-  //     ToastAndroid.show('Tag cancelled', 1000);
-  //     // stop the nfc scanning
-  //     NfcManager.cancelTechnologyRequest();
-  //   }
-  // }
-
-  return (
-    <View style={{flex: 1}}>
-      {!showPrototype ? (
-        <View style={{flex: 1}}>
-          {isScanned ? (
-            <ScannedInfo ownerInfo={ownerInfo} />
-          ) : (
-            <ScanNFC onPressScan={readTag} />
-          )}
-        </View>
-      ) : (
+  const renderChild = () => {
+    if (showPrototype) {
+      return (
         <View style={{flex: 1}}>
           <Prototype />
         </View>
-      )}
+      );
+    }
+
+    if (isNFCSupported) {
+      return <NFCNotFound />;
+    }
+
+    if (ownerInfo) {
+      return <ScannedInfo ownerInfo={ownerInfo} />;
+    }
+
+    return <ScanNFC onPressScan={readTag} />;
+  };
+
+  return (
+    <View style={{flex: 1}}>
+      {renderChild()}
       <View style={styles.button}>
         <Button
           title={showPrototype ? 'Hide Prototype' : 'View Prototype'}
