@@ -7,7 +7,13 @@
 
 import React, {useCallback, useEffect, useState} from 'react';
 
-import {ActivityIndicator, Button, StyleSheet, ToastAndroid, View} from 'react-native';
+import {
+  ActivityIndicator,
+  Button,
+  StyleSheet,
+  ToastAndroid,
+  View,
+} from 'react-native';
 import NfcManager, {NfcEvents} from 'react-native-nfc-manager';
 import NFCNotFound from './src/NFCNotFound';
 import Prototype from './src/Prototype';
@@ -94,7 +100,7 @@ function App(): React.JSX.Element {
     }
 
     return <ScanNFC onPressScan={readTag} />;
-  }, [ownerInfo]);
+  }, [isNFCSupported, ownerInfo, showPrototype]);
 
   return (
     <View style={{flex: 1}}>
@@ -104,12 +110,14 @@ function App(): React.JSX.Element {
         </View>
       )}
       <RenderChild />
-      {!ownerInfo && <View style={styles.button}>
-        <Button
-          title={showPrototype ? 'Hide Prototype' : 'View Prototype'}
-          onPress={() => setShowPrototype(prev => !prev)}
-        />
-      </View>}
+      {!ownerInfo && (
+        <View style={styles.button}>
+          <Button
+            title={showPrototype ? 'Hide Prototype' : 'View Prototype'}
+            onPress={() => setShowPrototype(prev => !prev)}
+          />
+        </View>
+      )}
     </View>
   );
 }

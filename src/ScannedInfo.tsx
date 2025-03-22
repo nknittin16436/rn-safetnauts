@@ -99,6 +99,10 @@ const ScannedInfo = ({ownerInfo: personInfo, onClose}) => {
               </Text>
             </View>
             <View style={styles.infoRow}>
+              <Text style={styles.label}>Registration Number</Text>
+              <Text style={styles.value}>{personInfo?.regNumber}</Text>
+            </View>
+            <View style={styles.infoRow}>
               <Text style={styles.label}>Incident Time</Text>
               <Text style={styles.value}>{personInfo?.time}</Text>
             </View>
