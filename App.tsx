@@ -7,20 +7,22 @@
 
 import React, {useEffect, useState} from 'react';
 
-import ScanNFC from './src/ScanNFC';
-import NfcManager, {NfcEvents, NfcTech} from 'react-native-nfc-manager';
-import {Alert, Button, ToastAndroid, View, StyleSheet} from 'react-native';
-import Prototype from './src/Prototype';
-import ScannedInfo, {OwnerInfo} from './src/ScannedInfo';
+import {ActivityIndicator, StyleSheet, ToastAndroid, View} from 'react-native';
+import NfcManager, {NfcEvents} from 'react-native-nfc-manager';
 import NFCNotFound from './src/NFCNotFound';
+import Prototype from './src/Prototype';
+import ScanNFC from './src/ScanNFC';
+import ScannedInfo from './src/ScannedInfo';
+import {getVehicleInfo} from './src/apis';
 
 NfcManager.start();
 
 function App(): React.JSX.Element {
-  const [isScanned, setIsScanned] = useState(false);
-  const [ownerInfo, setOwnerInfo] = useState<OwnerInfo>();
+  const [ownerInfo, setOwnerInfo] = useState(null);
   const [showPrototype, setShowPrototype] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [isNFCSupported, setIsNFCSupported] = useState(false);
+  console.log('🚀 ~ App ~ isNFCSupported:', isNFCSupported);
 
   useEffect(() => {
     const checkIsSupported = async () => {
@@ -37,24 +39,25 @@ function App(): React.JSX.Element {
 
   useEffect(() => {
     NfcManager.setEventListener(NfcEvents.DiscoverTag, tag => {
+      setLoading(true);
       const msgs = tag?.ndefMessage ?? [];
       const regByteCode = msgs?.[0]?.payload?.splice(3);
-      const nameByteCode = msgs?.[1]?.payload?.splice(3);
-      const modelByteCode = msgs?.[2]?.payload?.splice(3);
+      const timeByteCode = msgs?.[1]?.payload?.splice(3);
       const regNumber = regByteCode
         ? String.fromCharCode(...regByteCode)
         : 'Not available';
-      const name = nameByteCode
-        ? String.fromCharCode(...nameByteCode)
+      const time = timeByteCode
+        ? String.fromCharCode(...timeByteCode)
         : 'Not available';
-      const model = modelByteCode
-        ? String.fromCharCode(...modelByteCode)
-        : 'Not available';
-      setOwnerInfo({
-        name,
-        model,
-        regNumber,
-      });
+      (async () => {
+        const carOwnerInfo = await getVehicleInfo(regNumber);
+        setOwnerInfo({
+          time: time,
+          regNumber: regNumber,
+          ...carOwnerInfo,
+        });
+        setLoading(false);
+      })();
     });
 
     return () => {
@@ -71,7 +74,7 @@ function App(): React.JSX.Element {
     }
   };
 
-  const renderChild = () => {
+  const RenderChild = () => {
     if (showPrototype) {
       return (
         <View style={{flex: 1}}>
@@ -85,7 +88,9 @@ function App(): React.JSX.Element {
     }
 
     if (ownerInfo) {
-      return <ScannedInfo ownerInfo={ownerInfo} />;
+      return (
+        <ScannedInfo ownerInfo={ownerInfo} onClose={() => setOwnerInfo(null)} />
+      );
     }
 
     return <ScanNFC onPressScan={readTag} />;
@@ -93,13 +98,18 @@ function App(): React.JSX.Element {
 
   return (
     <View style={{flex: 1}}>
-      {renderChild()}
-      <View style={styles.button}>
+      {loading && (
+        <View style={styles.loader}>
+          <ActivityIndicator size={'large'} color={'lightblue'} />
+        </View>
+      )}
+      <RenderChild />
+      {/* <View style={styles.button}>
         <Button
           title={showPrototype ? 'Hide Prototype' : 'View Prototype'}
           onPress={() => setShowPrototype(prev => !prev)}
         />
-      </View>
+      </View> */}
     </View>
   );
 }
@@ -108,4 +118,13 @@ export default App;
 
 const styles = StyleSheet.create({
   button: {position: 'absolute', bottom: 20, left: 20, right: 20},
+  loader: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 4,
+    top: '50%',
+    left: '50%',
+    transform: [{translateX: '-50%'}, {translateY: '-50%'}],
+  },
 });

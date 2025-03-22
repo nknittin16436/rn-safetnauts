@@ -1,189 +1,349 @@
-import React from 'react';
+import {useState, useEffect} from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  ToastAndroid,
+  TouchableOpacity,
+  Alert,
+  Image,
+  ScrollView,
+  Platform,
 } from 'react-native';
-import {memo} from 'react';
-import Icon from '@react-native-vector-icons/fontawesome6';
 
-export interface OwnerInfo {
+interface PersonInfo {
   name: string;
-  regNumber: string;
-  model: string;
+  carMake: string;
+  carModel: string;
+  carYear: number;
+  insuranceActive: boolean;
+  insuranceProvider: string;
+  policyNumber: string;
+  lastIncident: string | null;
+  profileImage: string;
 }
 
-const ScannedInfo = ({ownerInfo}: {ownerInfo?: OwnerInfo}) => {
-  const {name, regNumber, model} = ownerInfo ?? {};
+const maskName = (name: string) => {
+  const parts = name.split(' ');
+  return parts
+    .map(
+      part =>
+        part.charAt(0) +
+        '*'.repeat(part.length - 2) +
+        part.charAt(part.length - 1),
+    )
+    .join(' ');
+};
 
-  const handleRaiseFIR = () => {
-    ToastAndroid.show('FIR raised', 500);
-  };
+const formatDate = (date: string | null) => {
+  if (!date) return 'No incidents reported';
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+};
 
-  const handleClaimInsurance = () => {
-    ToastAndroid.show('Claim insurance', 500);
+function isDatePassed(dateString: string) {
+  const givenDate = new Date(dateString);
+  const today = new Date();
+
+  // Normalize time to avoid issues with different time zones
+  today.setHours(0, 0, 0, 0);
+  givenDate.setHours(0, 0, 0, 0);
+
+  return givenDate < today;
+}
+
+const ScannedInfo = ({ownerInfo: personInfo,onClose}) => {
+
+  const handleFIRPress = () => {
+    Alert.alert('Register FIR', 'Are you sure you want to register an FIR?', [
+      {text: 'Cancel', style: 'cancel'},
+      {
+        text: 'Register',
+        onPress: () =>
+          Alert.alert('FIR Registration', 'FIR registered successfully'),
+        style: 'destructive',
+      },
+    ]);
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Vehicle Scanner</Text>
-      <Text style={styles.subHeader}>
-        Scan NFC tag to view vehicle information
-      </Text>
-
-      <View style={styles.card}>
-        {/* Vehicle Details Header */}
-        <View style={styles.cardHeader}>
-          <Text style={styles.vehicleDetailsText}>Vehicle Details</Text>
-          <Text style={styles.timestamp}>22/03/2025, 13:08:38</Text>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <View style={styles.headerInfo}>
+            <Text style={styles.title}>Person Information</Text>
+          </View>
         </View>
 
-        {/* Registration Number */}
-        <View style={styles.infoBox}>
-          <Icon name="car" size={20} iconStyle="solid" color="#4A64FE" />
-          <Text style={styles.label}>Registration Number</Text>
-          {regNumber ? <Text style={styles.value}>{regNumber}</Text> : null}
-        </View>
-
-        {/* Owner & Model */}
-        <View style={styles.row}>
-          {name ? (
-            <View style={styles.column}>
-              <Text style={styles.label}>Owner</Text>
-              <Text style={styles.value}>{name}</Text>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Personal Details</Text>
+          </View>
+          <View style={styles.card}>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Name</Text>
+              <Text style={styles.value}>
+                {personInfo?.rc_owner_name_masked}
+              </Text>
             </View>
-          ) : null}
-          {model ? (
-            <View style={styles.column}>
-              <Text style={styles.label}>Model</Text>
-              <Text style={styles.value}>{model}</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Incident Time</Text>
+              <Text style={styles.value}>{personInfo?.time}</Text>
             </View>
-          ) : null}
+          </View>
         </View>
-      </View>
 
-      {/* Buttons */}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.raiseFIR} onPress={handleRaiseFIR}>
-          <Text style={styles.buttonText}>Raise FIR</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.claimInsurance}
-          onPress={handleClaimInsurance}>
-          <Text style={styles.buttonText}>Claim Insurance</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Vehicle Information</Text>
+          </View>
+          <View style={styles.card}>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Vehicle</Text>
+              <Text style={styles.value}>
+                {personInfo?.brand?.make_display}{' '}
+                {personInfo?.model?.model_display}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            {/* <Shield size={20} color="#4A5568" /> */}
+            <Text style={styles.sectionTitle}>Insurance Details</Text>
+          </View>
+          <View style={styles.card}>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Status</Text>
+              <View style={styles.insuranceContainer}>
+                <View
+                  style={[
+                    styles.insuranceStatus,
+                    !isDatePassed(personInfo?.insurance_up_to)
+                      ? styles.active
+                      : styles.inactive,
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.insuranceText,
+                    !isDatePassed(personInfo?.insurance_up_to)
+                      ? styles.activeText
+                      : styles.inactiveText,
+                  ]}>
+                  {!isDatePassed(personInfo?.insurance_up_to)
+                    ? 'Active'
+                    : 'Inactive'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Provider</Text>
+              <Text style={styles.value}>{personInfo?.insurance_company}</Text>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      <TouchableOpacity style={styles.firButton} onPress={handleFIRPress}>
+        <Text style={styles.firButtonText}>Register FIR</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.doneButton} onPress={onClose}>
+        <Text style={styles.firButtonText}>Done</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
+export default ScannedInfo;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+    backgroundColor: '#F7FAFC',
+  },
+  scrollView: {
+    flex: 1,
   },
   header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#4A64FE',
-    marginBottom: 6,
-  },
-  subHeader: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
-  },
-  card: {
-    width: '100%',
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  vehicleDetailsText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  timestamp: {
-    fontSize: 14,
-    color: '#777',
-  },
-  infoBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EEF2FF',
-    padding: 12,
-    borderRadius: 8,
+    padding: 20,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  headerInfo: {
+    marginLeft: 15,
+    flex: 1,
+  },
+  profileImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#E2E8F0',
+  },
+  title: {
+    fontSize: 24,
+    color: '#1A202C',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#718096',
+  },
+  section: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    color: '#2D3748',
+    marginLeft: 8,
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+      },
+    }),
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDF2F7',
   },
   label: {
     fontSize: 14,
-    color: '#777',
-    marginLeft: 8,
+    color: '#718096',
   },
   value: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginLeft: 8,
+    fontSize: 14,
+    color: '#2D3748',
+    flex: 1,
+    textAlign: 'right',
   },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  column: {
-    width: '48%',
-    backgroundColor: '#F8F9FF',
-    padding: 10,
-    borderRadius: 8,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginTop: 20,
-  },
-  raiseFIR: {
+  insuranceContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E53935',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    flex: 1,
-    justifyContent: 'center',
-    marginRight: 10,
   },
-  claimInsurance: {
+  insuranceStatus: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  active: {
+    backgroundColor: '#48BB78',
+  },
+  inactive: {
+    backgroundColor: '#F56565',
+  },
+  insuranceText: {
+    fontSize: 14,
+  },
+  activeText: {
+    color: '#48BB78',
+  },
+  inactiveText: {
+    color: '#F56565',
+  },
+  actionButton: {
+    backgroundColor: 'white',
+    marginHorizontal: 20,
+    marginVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  actionButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2E7D32',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
   },
-  buttonText: {
+  actionButtonLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionButtonText: {
+    marginLeft: 12,
+    fontSize: 14,
+    color: '#4A5568',
+  },
+  firButton: {
+    backgroundColor: '#F56565',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    margin: 20,
+    borderRadius: 12,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+      },
+    }),
+  },
+  doneButton: {
+    backgroundColor: 'green',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    margin: 20,
+    marginTop: 0,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  firIcon: {
+    marginRight: 8,
+  },
+  firButtonText: {
+    color: 'white',
     fontSize: 16,
-    color: '#FFF',
-    fontWeight: '600',
-    marginLeft: 6,
   },
 });
-
-export default memo(ScannedInfo);
